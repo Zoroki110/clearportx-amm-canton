@@ -1,0 +1,192 @@
+version: '3.8'
+
+services:
+  # Canton Network Node (Local Development)
+  canton:
+    image: digitalasset/canton-open-source:3.3.0
+    container_name: clearportx-canton
+    ports:
+      - "3901:3901"  # Ledger API
+      - "3902:3902"  # Admin API
+      - "4401:4401"  # Public API
+    volumes:
+      - ./infrastructure/canton/canton.conf:/canton/config/canton.conf
+      - ./infrastructure/canton/participant.conf:/canton/config/participant.conf
+      - canton-data:/canton/data
+      - ./daml/.daml/dist:/canton/dars
+    environment:
+      - CANTON_CONFIG=/canton/config/canton.conf
+    command: daemon -c /canton/config/canton.conf
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3902/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clearportx-network
+
+  # PostgreSQL Database (Production)
+  postgres:
+    image: postgres:15-alpine
+    container_name: clearportx-db
+    environment:
+      POSTGRES_DB: clearportx
+      POSTGRES_USER: clearportx
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-changeme}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clearportx"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clearportx-network
+
+  # Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../infrastructure/docker/Dockerfile.backend
+    container_name: clearportx-backend
+    ports:
+      - "8080:8080"
+      - "9090:9090"  # Actuator/Metrics
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE:-local}
+      - CANTON_PARTICIPANT_HOST=canton
+      - CANTON_PARTICIPANT_PORT=3901
+      - CANTON_ADMIN_PORT=3902
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/clearportx
+      - DATABASE_USER=clearportx
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-changeme}
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-key-change-in-production}
+      - OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
+      - OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET}
+    depends_on:
+      canton:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./backend/logs:/app/logs
+    networks:
+      - clearportx-network
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../infrastructure/docker/Dockerfile.frontend
+      args:
+        - VITE_API_URL=http://localhost:8080
+        - VITE_OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
+    container_name: clearportx-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80
+    networks:
+      - clearportx-network
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: clearportx-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./devops/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./devops/monitoring/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - clearportx-network
+
+  # Grafana Dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: clearportx-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - ./devops/monitoring/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./devops/monitoring/grafana-dashboard.json:/var/lib/grafana/dashboards/clearportx.json
+      - ./devops/monitoring/grafana-dashboard-config.yml:/etc/grafana/provisioning/dashboards/dashboard.yml
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - clearportx-network
+
+  # Redis Cache (Optional)
+  redis:
+    image: redis:7-alpine
+    container_name: clearportx-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - clearportx-network
+
+  # Nginx Reverse Proxy (Production)
+  nginx:
+    image: nginx:alpine
+    container_name: clearportx-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/docker/nginx.conf:/etc/nginx/nginx.conf
+      - ./infrastructure/docker/ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - clearportx-network
+    profiles:
+      - production
+
+volumes:
+  canton-data:
+    driver: local
+  postgres-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  clearportx-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16

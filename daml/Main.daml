@@ -1,0 +1,14 @@
+module Main where
+
+-- ClearportX AMM Main Module
+-- This module re-exports all the key contracts needed for the AMM
+
+import AMM.Pool
+import AMM.SwapRequest
+import AMM.AtomicSwap
+import AMM.Receipt
+import AMM.PoolAnnouncement
+import AMM.ProtocolFees
+import AMM.Types
+import Token.Token
+import LPToken.LPToken

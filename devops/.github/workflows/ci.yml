@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup DAML SDK
+        run: |
+          curl -sSL https://get.daml.com/ | sh -s 3.3.0
+          echo "$HOME/.daml/bin" >> $GITHUB_PATH
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Test DAML
+        run: cd daml && daml build && daml test
+
+      - name: Test Backend
+        run: cd backend && ./gradlew test
+
+      - name: Test Frontend
+        run: cd frontend && npm ci && npm test
+
+      - name: Build Docker Images
+        run: docker-compose build

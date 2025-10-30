@@ -1,0 +1,35 @@
+module MintTokensForLiquidity where
+
+import Daml.Script
+import Token.Token
+
+mintTokens : Script ()
+mintTokens = script do
+  debug "🪙 Minting tokens for liquidity..."
+  
+  -- Use existing app_provider party
+  let appProvider = PartyIdHint "app_provider_quickstart-root-1::12201300e204e8a38492e7df0ca7cf67ec3fe3355407903a72323fd72da9f368a45d"
+  provider <- allocatePartyWithHint "app_provider" appProvider
+  
+  -- Mint 100 ETH
+  ethToken <- submit provider do
+    createCmd Token with
+      issuer = provider
+      owner = provider
+      symbol = "ETH"
+      amount = 100.0
+  
+  -- Mint 200,000 USDC  
+  usdcToken <- submit provider do
+    createCmd Token with
+      issuer = provider
+      owner = provider
+      symbol = "USDC"
+      amount = 200000.0
+      
+  debug $ "✅ Minted 100 ETH - Contract: " <> show ethToken
+  debug $ "✅ Minted 200,000 USDC - Contract: " <> show usdcToken
+  debug ""
+  debug "🎯 Tokens ready for liquidity provision!"
+  
+  return ()

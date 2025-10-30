@@ -1,0 +1,157 @@
+module InitDevNetComplete where
+
+import Daml.Script
+import qualified Token.Token as T
+import qualified AMM.Pool as P
+import qualified AMM.PoolAnnouncement as PA
+import qualified LPToken.LPToken as LP
+import DA.Time
+
+-- Your actual DevNet party ID
+devNetParty : Text
+devNetParty = "ClearportX-DEX-1::122043801dccdfd8c892fa46ebc1dafc901f7992218886840830aeef1cf7eacedd09"
+
+-- Complete initialization: Create pool, add liquidity, and execute swap
+completeInit : Script ()
+completeInit = script do
+  debug "=== CLEARPORTX DEVNET INITIALIZATION ==="
+  debug $ "Using party: " <> devNetParty
+
+  case partyFromText devNetParty of
+    None -> debug "ERROR: Invalid party ID"
+    Some clearportx -> do
+      debug "✅ Party validated successfully"
+
+      -- Step 1: Create ETH/USDC Pool
+      debug "Step 1: Creating ETH/USDC pool..."
+      poolCid <- submit clearportx do
+        createCmd P.Pool with
+          poolOperator = clearportx
+          poolParty = clearportx
+          lpIssuer = clearportx
+          issuerA = clearportx
+          issuerB = clearportx
+          symbolA = "ETH"
+          symbolB = "USDC"
+          feeBps = 30  -- 0.3% fee
+          poolId = "ETH-USDC-DEVNET-V1"
+          maxTTL = seconds 86400
+          totalLPSupply = 0.0
+          reserveA = 0.0
+          reserveB = 0.0
+          tokenACid = None
+          tokenBCid = None
+          protocolFeeReceiver = clearportx
+          maxInBps = 1000  -- 10% max input
+          maxOutBps = 1000  -- 10% max output
+
+      debug $ "✅ Pool created: " <> show poolCid
+
+      -- Step 2: Announce pool
+      announcementCid <- submit clearportx do
+        createCmd PA.PoolAnnouncement with
+          announcer = clearportx
+          poolId = "ETH-USDC-DEVNET-V1"
+          poolCid = poolCid
+          symbolA = "ETH"
+          symbolB = "USDC"
+
+      debug "✅ Pool announced"
+
+      -- Step 3: Mint tokens for liquidity
+      debug "Step 2: Minting tokens for liquidity..."
+
+      ethCid <- submit clearportx do
+        createCmd T.Token with
+          issuer = clearportx
+          owner = clearportx
+          symbol = "ETH"
+          amount = 100.0
+
+      usdcCid <- submit clearportx do
+        createCmd T.Token with
+          issuer = clearportx
+          owner = clearportx
+          symbol = "USDC"
+          amount = 200000.0
+
+      debug "✅ Tokens minted: 100 ETH + 200,000 USDC"
+
+      -- Step 4: Add liquidity
+      debug "Step 3: Adding liquidity to pool..."
+      let deadline = time (date 2026 Jan 1) 0 0 0
+
+      (lpTokenCid, newPoolCid) <- submit clearportx do
+        exerciseCmd poolCid P.AddLiquidity with
+          provider = clearportx
+          tokenACid = ethCid
+          tokenBCid = usdcCid
+          amountA = 100.0
+          amountB = 200000.0
+          minLPTokens = 0.0
+          deadline = deadline
+
+      debug $ "✅ Liquidity added! LP Token: " <> show lpTokenCid
+
+      -- Step 5: Query pool state
+      pools <- query @P.Pool clearportx
+      case pools of
+        ((_, pool) :: _) -> do
+          debug "📊 Pool State After Liquidity:"
+          debug $ "  Reserve A (ETH): " <> show pool.reserveA
+          debug $ "  Reserve B (USDC): " <> show pool.reserveB
+          debug $ "  LP Supply: " <> show pool.totalLPSupply
+          debug $ "  Price: 1 ETH = " <> show (pool.reserveB / pool.reserveA) <> " USDC"
+        _ -> debug "Pool not found"
+
+      -- Step 6: Execute test swap
+      debug "Step 4: Executing test swap (1 ETH -> USDC)..."
+
+      -- Mint 1 ETH for swap
+      swapEthCid <- submit clearportx do
+        createCmd T.Token with
+          issuer = clearportx
+          owner = clearportx
+          symbol = "ETH"
+          amount = 1.0
+
+      -- Find updated pool
+      newPools <- query @P.Pool clearportx
+      case newPools of
+        ((poolCid2, pool2) :: _) -> do
+          debug $ "Before swap: ETH=" <> show pool2.reserveA <> ", USDC=" <> show pool2.reserveB
+
+          -- Execute atomic swap (requires multi-party auth)
+          -- Since poolParty == clearportx, we can use single submit
+          (outputTokenCid, finalPoolCid) <- submit clearportx do
+            exerciseCmd poolCid2 P.AtomicSwap with
+              trader = clearportx
+              traderInputTokenCid = swapEthCid
+              inputSymbol = "ETH"
+              inputAmount = 1.0
+              outputSymbol = "USDC"
+              minOutput = 1900.0
+              maxPriceImpactBps = 500
+              deadline = deadline
+
+          debug $ "✅ SWAP SUCCESSFUL! Output token: " <> show outputTokenCid
+
+          -- Check final pool state
+          finalPools <- query @P.Pool clearportx
+          case finalPools of
+            ((_, finalPool) :: _) -> do
+              debug "📊 Pool State After Swap:"
+              debug $ "  Reserve A (ETH): " <> show finalPool.reserveA
+              debug $ "  Reserve B (USDC): " <> show finalPool.reserveB
+              debug $ "  New price: 1 ETH = " <> show (finalPool.reserveB / finalPool.reserveA) <> " USDC"
+            _ -> return ()
+        _ -> debug "ERROR: Pool not found for swap"
+
+      debug ""
+      debug "🎉 === DEVNET INITIALIZATION COMPLETE ==="
+      debug "✅ Pool created"
+      debug "✅ Liquidity added (100 ETH / 200k USDC)"
+      debug "✅ Swap executed (1 ETH -> ~1,980 USDC)"
+      debug "🚀 ClearportX AMM is LIVE on DevNet!"
+
+      return ()

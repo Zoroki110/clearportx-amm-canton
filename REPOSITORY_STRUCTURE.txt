@@ -1,0 +1,220 @@
+clearportx-amm-canton/                      # Root directory
+│
+├── 📄 README.md                            # Main project documentation
+├── 📄 GETTING_STARTED.md                   # Quick start guide
+├── 📄 PROJECT_SUMMARY.md                   # Complete project summary
+├── 📄 CONTRIBUTING.md                      # Contribution guidelines
+├── 📄 LICENSE                              # MIT License
+├── 📄 .gitignore                           # Git ignore rules
+│
+├── ⚙️  Makefile                             # Build & deployment commands
+├── 📦 package.json                         # NPM scripts & dependencies
+├── 🐳 docker-compose.yml                   # Full stack Docker setup
+│
+├── 🔧 verify-setup.sh                      # Setup verification script
+├── 🔄 migrate-from-cn-quickstart.sh        # Migration script
+│
+├── 📁 daml/                                # DAML Smart Contracts
+│   ├── daml.yaml                           # DAML project configuration
+│   │
+│   ├── AMM/                                # Core AMM contracts
+│   │   ├── Pool.daml                       # Liquidity pool (x*y=k)
+│   │   ├── Types.daml                      # Type definitions
+│   │   ├── PoolAnnouncement.daml           # Pool discovery
+│   │   ├── Receipt.daml                    # Transaction receipts
+│   │   ├── AtomicSwap.daml                 # Atomic swap logic
+│   │   └── SwapRequest.daml                # Swap requests
+│   │
+│   ├── Token/                              # Token standard
+│   │   └── Token.daml                      # Fungible token implementation
+│   │
+│   ├── LPToken/                            # LP tokens
+│   │   └── LPToken.daml                    # Liquidity provider tokens
+│   │
+│   ├── Protocol/                           # Protocol features
+│   │   └── Fees.daml                       # Fee collection
+│   │
+│   └── Init/                               # Initialization
+│       └── DevNetInit.daml                 # DevNet setup script
+│
+├── 📁 backend/                             # Spring Boot Backend
+│   ├── build.gradle.kts                    # Gradle build configuration
+│   │
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/clearportx/
+│       │   │   ├── ClearportXApplication.java     # Main application
+│       │   │   │
+│       │   │   ├── config/                        # Configuration
+│       │   │   │   ├── SecurityConfig.java        # OAuth/JWT security
+│       │   │   │   ├── CorsConfig.java            # CORS settings
+│       │   │   │   └── CantonConfig.java          # Canton connection
+│       │   │   │
+│       │   │   ├── controller/                    # REST Controllers
+│       │   │   │   ├── PoolController.java        # Pool endpoints
+│       │   │   │   ├── SwapController.java        # Swap endpoints
+│       │   │   │   └── LiquidityController.java   # Liquidity endpoints
+│       │   │   │
+│       │   │   ├── service/                       # Business Logic
+│       │   │   │   ├── LedgerService.java         # Canton integration
+│       │   │   │   ├── TokenService.java          # Token management
+│       │   │   │   └── MetricsService.java        # Prometheus metrics
+│       │   │   │
+│       │   │   ├── model/                         # Data Models
+│       │   │   │   ├── Pool.java
+│       │   │   │   ├── Swap.java
+│       │   │   │   └── Token.java
+│       │   │   │
+│       │   │   ├── dto/                           # DTOs
+│       │   │   ├── repository/                    # Data access
+│       │   │   └── exception/                     # Exception handling
+│       │   │
+│       │   └── resources/
+│       │       └── application.yml                # Application configuration
+│       │
+│       └── test/                                  # Backend tests
+│           └── java/com/clearportx/
+│               ├── integration/                   # Integration tests
+│               └── unit/                          # Unit tests
+│
+├── 📁 frontend/                            # React Frontend
+│   ├── package.json                        # Dependencies
+│   ├── vite.config.ts                      # Vite configuration
+│   ├── tsconfig.json                       # TypeScript config
+│   ├── index.html                          # HTML template
+│   │
+│   └── src/
+│       ├── main.tsx                        # Entry point
+│       ├── App.tsx                         # Main component
+│       │
+│       ├── components/                     # React Components
+│       │   ├── SwapInterface.tsx           # Token swap UI
+│       │   ├── LiquidityPool.tsx           # Liquidity management
+│       │   ├── PoolList.tsx                # Pool list view
+│       │   └── PoolCard.tsx                # Pool card component
+│       │
+│       ├── services/                       # API Services
+│       │   ├── cantonApi.ts                # Canton API client
+│       │   └── auth.ts                     # Authentication
+│       │
+│       ├── hooks/                          # React Hooks
+│       │   ├── usePool.ts
+│       │   ├── useSwap.ts
+│       │   └── useAuth.ts
+│       │
+│       ├── types/                          # TypeScript types
+│       ├── utils/                          # Utilities
+│       └── styles/                         # CSS/SCSS
+│           └── index.css
+│
+├── 📁 infrastructure/                      # Infrastructure as Code
+│   │
+│   ├── canton/                             # Canton Configuration
+│   │   ├── canton.conf                     # Node configuration
+│   │   └── participant.conf                # Participant config
+│   │
+│   ├── docker/                             # Docker Configuration
+│   │   ├── Dockerfile.backend              # Backend container
+│   │   ├── Dockerfile.frontend             # Frontend container
+│   │   └── nginx.conf                      # Nginx reverse proxy
+│   │
+│   ├── kubernetes/                         # Kubernetes Manifests
+│   │   ├── deployment.yaml                 # K8s deployments
+│   │   ├── service.yaml                    # K8s services
+│   │   └── ingress.yaml                    # K8s ingress
+│   │
+│   ├── scripts/                            # Deployment Scripts
+│   │   ├── deploy-local.sh                 # Local deployment
+│   │   ├── deploy-devnet.sh                # DevNet deployment
+│   │   ├── deploy-mainnet.sh               # MainNet deployment
+│   │   ├── init-pools.sh                   # Initialize pools
+│   │   ├── backup.sh                       # Backup script
+│   │   └── verify-deployment.sh            # Deployment verification
+│   │
+│   └── terraform/                          # Terraform IaC
+│       ├── main.tf
+│       ├── variables.tf
+│       └── outputs.tf
+│
+├── 📁 devops/                              # DevOps Configuration
+│   │
+│   ├── .github/                            # GitHub Actions
+│   │   └── workflows/
+│   │       ├── ci.yml                      # Continuous Integration
+│   │       └── deploy.yml                  # Continuous Deployment
+│   │
+│   ├── monitoring/                         # Monitoring & Metrics
+│   │   ├── prometheus.yml                  # Prometheus config
+│   │   ├── alerts.yml                      # Alert rules
+│   │   ├── grafana-dashboard.json          # Grafana dashboard
+│   │   ├── grafana-datasources.yml         # Data sources
+│   │   └── grafana-dashboard-config.yml    # Dashboard config
+│   │
+│   └── scripts/                            # DevOps scripts
+│       └── health-check.sh
+│
+├── 📁 docs/                                # Documentation
+│   ├── ARCHITECTURE.md                     # System architecture
+│   ├── API.md                              # API reference
+│   ├── DEPLOYMENT.md                       # Deployment guide
+│   ├── TROUBLESHOOTING.md                  # Troubleshooting guide
+│   └── CANTON_INTEGRATION.md               # Canton integration
+│
+├── 📁 test/                                # Test Suites
+│   ├── daml/                               # DAML tests
+│   │   ├── TestPool.daml
+│   │   ├── TestSwap.daml
+│   │   └── TestLiquidity.daml
+│   │
+│   ├── backend/                            # Backend tests
+│   │   ├── integration/
+│   │   └── unit/
+│   │
+│   └── e2e/                                # End-to-end tests
+│       ├── run-tests.sh
+│       └── cypress/
+│
+└── 📁 config/                              # Configuration Files
+    ├── .env.example                        # Environment template
+    ├── devnet.env.example                  # DevNet credentials template
+    └── mainnet.env.example                 # MainNet credentials template
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+📊 Project Statistics:
+
+- Total Directories: 50+
+- DAML Contracts: 10+
+- Backend Files: 20+ Java/Kotlin files
+- Frontend Components: 10+ React components
+- Docker Containers: 8 services
+- Documentation: 10+ markdown files
+- Scripts: 15+ automation scripts
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 Key Features:
+
+✅ Complete DAML smart contract suite
+✅ Production-ready Spring Boot backend
+✅ Modern React frontend with TypeScript
+✅ Full Docker Compose setup
+✅ Kubernetes deployment manifests
+✅ CI/CD with GitHub Actions
+✅ Monitoring with Prometheus & Grafana
+✅ Comprehensive documentation
+✅ Migration scripts
+✅ Test suites
+
+═══════════════════════════════════════════════════════════════════════════
+
+🚀 Quick Start:
+
+1. ./verify-setup.sh          # Verify prerequisites
+2. make build                 # Build all components
+3. docker-compose up -d       # Start all services
+4. make deploy-local          # Deploy to Canton
+5. make init-local            # Initialize pools
+
+═══════════════════════════════════════════════════════════════════════════

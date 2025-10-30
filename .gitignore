@@ -1,0 +1,159 @@
+# DAML
+.daml/
+*.dar
+*.dalf
+daml-config.yaml
+
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+*.class
+*.log
+*.ctxt
+
+# Build artifacts
+target/
+build/
+.gradle/
+*.iml
+*.ipr
+*.iws
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+.pnpm-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+!config/*.env.example
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+h2/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+*.sw?
+
+# Test coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Canton
+canton.log
+canton-*.log
+participant.log
+*.canton
+*.trace
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Kubernetes
+*.kubeconfig
+secrets/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Sensitive files
+*.key
+*.pem
+*.p12
+*.jks
+secrets.yaml
+credentials.json
+service-account.json
+
+# Build outputs
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Gradle
+.gradle
+**/build/
+!src/**/build/
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
+# Maven
+**/target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Spring Boot
+BOOT-INF/
+META-INF/
+
+# Testing
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Backup files
+*.bak
+*.backup
+*.old
+*~
+
+# Generated files
+generated/
+codegen/
+*.generated.*
+
+# Monitoring
+prometheus-data/
+grafana-data/
+
+# Misc
+*.tmp
+*.temp
+.cache/

@@ -1,0 +1,61 @@
+module TestDirectPoolSwap where
+
+import Daml.Script
+import qualified Token.Token as T
+import qualified AMM.Pool as P
+
+-- Test direct Pool.AtomicSwap choice (not using AtomicSwapProposal wrapper)
+testDirectSwap : Script ()
+testDirectSwap = script do
+  let partyStr = "app_provider_quickstart-root-1::12201300e204e8a38492e7df0ca7cf67ec3fe3355407903a72323fd72da9f368a45d"
+
+  case partyFromText partyStr of
+    None -> debug "ERROR: Invalid party"
+    Some trader -> do
+      debug "Step 1: Minting 1 ETH..."
+      ethCid <- submit trader do
+        createCmd T.Token with
+          issuer = trader
+          owner = trader
+          symbol = "ETH"
+          amount = 1.0
+
+      debug $ "ETH minted: " <> show ethCid
+
+      debug "Step 2: Finding pool..."
+      pools <- query @P.Pool trader
+
+      case pools of
+        [] -> debug "ERROR: No pool found!"
+        ((poolCid, pool) :: _) -> do
+          debug $ "Found pool: " <> pool.poolId
+          debug $ "Reserves: ETH=" <> show pool.reserveA <> ", USDC=" <> show pool.reserveB
+
+          debug "Step 3: Executing Pool.AtomicSwap choice directly..."
+          let deadline = time (date 2026 Jan 1) 0 0 0
+
+          -- Call Pool.AtomicSwap directly (requires both trader + poolParty authorization)
+          result <- submitMulti [trader, pool.poolParty] [] do
+            exerciseCmd poolCid P.AtomicSwap with
+              trader = trader
+              traderInputTokenCid = ethCid
+              inputSymbol = "ETH"
+              inputAmount = 1.0
+              outputSymbol = "USDC"
+              minOutput = 1900.0
+              maxPriceImpactBps = 500
+              deadline = deadline
+
+          debug "SUCCESS! Swap executed!"
+          debug $ "Output token CID: " <> show result._1
+          debug $ "New pool CID: " <> show result._2
+
+          -- Query new pool state
+          newPools <- query @P.Pool trader
+          case newPools of
+            ((_, newPool) :: _) -> do
+              debug $ "New reserves: ETH=" <> show newPool.reserveA <> ", USDC=" <> show newPool.reserveB
+              debug $ "Price: 1 ETH = " <> show (newPool.reserveB / newPool.reserveA) <> " USDC"
+            _ -> return ()
+
+      return ()
