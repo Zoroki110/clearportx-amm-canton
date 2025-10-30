@@ -1,0 +1,26 @@
+[build]
+  base = "app"
+  publish = "app"
+  command = "echo 'Static site - no build needed'"
+
+[build.environment]
+  NODE_VERSION = "18"
+  REACT_APP_CANTON_LEDGER_API = "https://canton-api.cleaportx.com"
+  REACT_APP_CANTON_ADMIN_API = "https://canton-admin.cleaportx.com"
+  REACT_APP_PARTICIPANT_ID = "cleaportx_participant"
+  REACT_APP_NETWORK_NAME = "MainNet"
+
+# SPA fallback for React Router
+[[redirects]]
+  from = "/app/*"
+  to = "/app/index.html"
+  status = 200
+
+# Security headers for app
+[[headers]]
+  for = "/app/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
