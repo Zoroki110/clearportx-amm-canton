@@ -1,7 +1,7 @@
 [build]
-  base = "frontend"
-  publish = "build"
-  command = "npm ci && npm run build"
+  base = "app"
+  publish = "app"
+  command = "echo 'Static site - no build needed'"
 
 [build.environment]
   NODE_VERSION = "18"
@@ -12,13 +12,13 @@
 
 # SPA fallback for React Router
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
+  from = "/app/*"
+  to = "/app/index.html"
   status = 200
 
-# Security headers
+# Security headers for app
 [[headers]]
-  for = "/*"
+  for = "/app/*"
   [headers.values]
     X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"
